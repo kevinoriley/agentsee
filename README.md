@@ -148,4 +148,4 @@ agentsee polls these directories for new files, parses the JSONL in real time, a
 
 ## License
 
-MIT
+GPL-3.0 — see [LICENSE](LICENSE)
