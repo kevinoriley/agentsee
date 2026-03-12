@@ -33,10 +33,10 @@ Run from your Claude Code project directory:
 
 ```bash
 # Auto-discover agents (recommended)
-bash agentsee/agentsee.sh
+bash agentsee/dashboard.sh
 
-# Or run the Python script directly
-python3 agentsee/agentsee.py --dashboard --project-dir .
+# Or directly
+python3 agentsee/tail-agent.py --dashboard --project-dir .
 ```
 
 The dashboard starts with "Waiting for agents..." and picks up new agents automatically as they spawn. It discovers agents from two sources:
@@ -50,26 +50,26 @@ The dashboard starts with "Waiting for agents..." and picks up new agents automa
 
 ```bash
 # Auto-discover from project directory
-bash agentsee.sh
+bash dashboard.sh
 
 # Explicit label:path pairs
-python3 agentsee.py --dashboard web:path1 recon:path2
+python3 tail-agent.py --dashboard web:path1 recon:path2
 
 # With project directory hint (when running from a different cwd)
-python3 agentsee.py --dashboard --project-dir /path/to/project
+python3 tail-agent.py --dashboard --project-dir /path/to/project
 ```
 
 ### Single-agent modes
 
 ```bash
 # One-shot: print formatted output and exit
-python3 agentsee.py <output_file>
+python3 tail-agent.py <output_file>
 
 # Follow: live-tail like tail -f (Ctrl-C to stop)
-python3 agentsee.py -f <output_file>
+python3 tail-agent.py -f <output_file>
 
 # Pipe: read from stdin
-tail -f <output_file> | python3 agentsee.py
+tail -f <output_file> | python3 tail-agent.py
 ```
 
 ### Purge agent history
@@ -77,7 +77,7 @@ tail -f <output_file> | python3 agentsee.py
 Delete all agent transcripts for the current project:
 
 ```bash
-bash agentsee.sh --purge
+bash dashboard.sh --purge
 ```
 
 Prompts for confirmation before deleting.
