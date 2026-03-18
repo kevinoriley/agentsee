@@ -23,6 +23,8 @@ Switching modes mid-run is just changing the number. No restart needed.
 
 ## Install
 
+Requires Node.js 18+ and npm.
+
 ```bash
 git clone https://github.com/kevinoriley/agentsee.git
 cd agentsee
@@ -32,14 +34,141 @@ npm run build
 
 The Python terminal dashboard (`bash dashboard.sh`) still works standalone with zero dependencies — no npm install needed.
 
-## Quick start
+## Usage
+
+### Start the server
 
 ```bash
 npm start
-# Open http://localhost:4900
 ```
 
-Then add the hooks and MCP server to your Claude Code project — see the [docs](https://github.com/kevinoriley/agentsee/wiki) for configuration.
+The server listens on port 4900 by default. Open `http://localhost:4900` for the web dashboard.
+
+### Environment variables
+
+```bash
+# Change the port
+AGENTSEE_PORT=5000 npm start
+
+# Point at a specific project for agent discovery
+AGENTSEE_PROJECT_DIR=/home/user/my-project npm start
+
+# Both
+AGENTSEE_PORT=5000 AGENTSEE_PROJECT_DIR=/home/user/my-project npm start
+```
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `AGENTSEE_PORT` | `4900` | Server port (HTTP, WebSocket, and MCP all on this port) |
+| `AGENTSEE_PROJECT_DIR` | current directory | Project directory for agent transcript discovery |
+| `AGENTSEE_URL` | `http://localhost:4900` | URL the hook scripts use to reach the server |
+
+### Stop the server
+
+`Ctrl+C` in the terminal, or kill the process.
+
+### Configure your Claude Code project
+
+Three things to set up in your project:
+
+**1. Hook scripts** — add to `.claude/settings.json`:
+
+```json
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /path/to/agentsee/hooks/agentsee-pre.sh"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /path/to/agentsee/hooks/agentsee-post.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**2. MCP server** — add to `.mcp.json`:
+
+```json
+{
+  "mcpServers": {
+    "agentsee": {
+      "url": "http://localhost:4900/mcp"
+    }
+  }
+}
+```
+
+**3. Agent prompt** — add to `CLAUDE.md` or your shared agent prompt:
+
+```
+If any tool call is rejected with an OPERATOR CHECKPOINT REQUIRED or OPERATOR INTERVENTION message, immediately call operator_checkpoint with a summary of your progress and intended next steps. Do not attempt other tools first.
+```
+
+### Operator controls
+
+From the web dashboard you can:
+
+- **Hold** an agent — it stops on its next tool call and waits for you
+- **Release** a held agent — it resumes normal operation
+- **Set turn threshold** — `1` = check in every tool, `5` = every 5 tools, `Auto` = autonomous
+- **Respond to check-ins** — when an agent is checking in, a chat panel opens for your response
+
+### Terminal dashboard
+
+The read-only terminal dashboard works without the server:
+
+```bash
+# Auto-discover agents from current project
+bash dashboard.sh
+
+# Explicit paths
+python3 tail-agent.py --dashboard label1:path1 label2:path2
+
+# Purge all agent transcripts
+bash dashboard.sh --purge
+```
+
+### API
+
+All endpoints are on the same port as the dashboard.
+
+```bash
+# Hold an agent
+curl -X POST http://localhost:4900/agent/AGENT_ID/hold
+
+# Release
+curl -X POST http://localhost:4900/agent/AGENT_ID/release
+
+# Set supervised mode (check in every tool call)
+curl -X POST http://localhost:4900/agent/AGENT_ID/threshold \
+  -H "Content-Type: application/json" -d '{"threshold": 1}'
+
+# Set autonomous mode
+curl -X POST http://localhost:4900/agent/AGENT_ID/threshold \
+  -H "Content-Type: application/json" -d '{"threshold": null}'
+
+# View all agents
+curl http://localhost:4900/agent/status
+
+# Health check
+curl http://localhost:4900/health
+```
 
 ## License
 
