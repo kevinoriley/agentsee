@@ -44,7 +44,7 @@ The control layer works through two mechanisms:
 ### Step 1: Clone and build
 
 ```bash
-git clone https://github.com/kevinoriley/agentsee.git
+git clone https://github.com/blacklanternsecurity/agentsee.git
 cd agentsee
 npm install
 cd dashboard && npm install && cd ..
