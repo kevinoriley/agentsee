@@ -90,7 +90,7 @@ export function App() {
   });
 
   const handleRespond = useCallback(
-    (agentId: string, message: string, keepHeld: boolean) => {
+    (agentId: string, message: string, keepHeld: boolean, leash: number | null) => {
       ws.addChatMessage(agentId, {
         from: "operator",
         text: message,
@@ -106,6 +106,15 @@ export function App() {
         agent_id: agentId,
         data: { message: appendedMessage, release: !keepHeld },
       });
+
+      // Set leash if specified
+      if (leash !== null) {
+        send({
+          type: "agent:set_threshold",
+          agent_id: agentId,
+          data: { threshold: leash },
+        });
+      }
 
       ws.setCheckin(agentId, null);
       if (!keepHeld) setChatAgentId(null);

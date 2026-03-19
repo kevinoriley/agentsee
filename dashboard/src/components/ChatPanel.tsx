@@ -12,7 +12,7 @@ interface Props {
   agentId: string;
   checkin: CheckinData | null;
   history: ChatMessage[];
-  onRespond: (agentId: string, message: string, keepHeld: boolean) => void;
+  onRespond: (agentId: string, message: string, keepHeld: boolean, leash: number | null) => void;
   onClose: () => void;
 }
 
@@ -30,11 +30,14 @@ export function ChatPanel({ agentId, checkin, history, onRespond, onClose }: Pro
   }, [history.length, checkin]);
 
   const [keepHeld, setKeepHeld] = useState(false);
+  const [leashDraft, setLeashDraft] = useState("");
 
   const send = () => {
     const msg = input.trim() || "Continue.";
-    onRespond(agentId, msg, keepHeld);
+    const leash = leashDraft.trim() ? parseInt(leashDraft, 10) : null;
+    onRespond(agentId, msg, keepHeld, leash && leash > 0 ? leash : null);
     setInput("");
+    setLeashDraft("");
   };
 
   const waiting = checkin !== null;
@@ -109,15 +112,29 @@ export function ChatPanel({ agentId, checkin, history, onRespond, onClose }: Pro
             >
               {keepHeld ? "Send + Keep held" : "Send + Release"}
             </button>
-            <label style={s.toggleLabel}>
-              <input
-                type="checkbox"
-                checked={keepHeld}
-                onChange={(e) => setKeepHeld(e.target.checked)}
-                style={{ cursor: "pointer" }}
-              />
-              <span style={{ color: "#8b949e", fontSize: 11 }}>Request response</span>
-            </label>
+            <div style={s.optionsRow}>
+              <label style={s.toggleLabel}>
+                <input
+                  type="checkbox"
+                  checked={keepHeld}
+                  onChange={(e) => setKeepHeld(e.target.checked)}
+                  style={{ cursor: "pointer" }}
+                />
+                <span style={{ color: "#8b949e", fontSize: 11 }}>Request response</span>
+              </label>
+              <label style={s.toggleLabel}>
+                <span style={{ color: "#8b949e", fontSize: 11 }}>Leash</span>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  value={leashDraft}
+                  onChange={(e) => setLeashDraft(e.target.value.replace(/[^0-9]/g, ""))}
+                  placeholder="—"
+                  style={s.leashInput}
+                  title="Set leash on release (empty = no change)"
+                />
+              </label>
+            </div>
           </div>
         </div>
       </div>
@@ -266,12 +283,29 @@ const s: Record<string, React.CSSProperties> = {
     alignItems: "flex-end",
     justifyContent: "flex-end",
   },
+  optionsRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+  },
   toggleLabel: {
     display: "flex",
     alignItems: "center",
     gap: 4,
     cursor: "pointer",
     userSelect: "none",
+  },
+  leashInput: {
+    width: 28,
+    background: "#161b22",
+    border: "1px solid #30363d",
+    borderRadius: 3,
+    color: "#c9d1d9",
+    fontSize: 11,
+    fontFamily: "inherit",
+    textAlign: "center",
+    padding: "1px 2px",
+    outline: "none",
   },
   sendBtn: {
     background: "#238636",
