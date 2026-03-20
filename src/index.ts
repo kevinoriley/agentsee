@@ -10,15 +10,36 @@ import { createHookRouter } from "./hooks/receiver.js";
 import { createMcpRouter } from "./mcp/server.js";
 import { setupWsHandlers } from "./dashboard/ws-events.js";
 import { TailerManager, createHistoryRouter } from "./tailer/manager.js";
+import { loadToken, createAuthMiddleware, isAuthenticated } from "./auth.js";
 
 const PORT = parseInt(process.env.AGENTSEE_PORT ?? "4900", 10);
 const PROJECT_DIR = process.env.AGENTSEE_PROJECT_DIR ?? "";
 
+const token = loadToken();
+const auth = createAuthMiddleware(token);
+
+// Bind to 0.0.0.0 when token is set (external access with auth),
+// otherwise localhost only (no auth needed).
+const HOST = process.env.AGENTSEE_HOST ?? (token ? "0.0.0.0" : "127.0.0.1");
+
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Login routes (before auth middleware)
+app.get("/login", auth.loginPage);
+app.post("/login", auth.loginSubmit);
+
+// Auth middleware (protects everything except /login and /hook/*)
+app.use(auth.protect);
 
 const server = createServer(app);
-const wss = new WebSocketServer({ server });
+const wss = new WebSocketServer({
+  server,
+  verifyClient: token
+    ? ({ req }, cb) => cb(isAuthenticated(req, token))
+    : undefined,
+});
 
 const store = new AgentStore();
 const tailerManager = new TailerManager(store, wss, PROJECT_DIR);
@@ -74,8 +95,13 @@ if (existsSync(join(dashboardDist, "index.html"))) {
   console.log(`  Dashboard:      http://localhost:${PORT}/ (${dashboardDist})`);
 }
 
-server.listen(PORT, () => {
-  console.log(`agentsee listening on :${PORT}`);
+server.listen(PORT, HOST, () => {
+  console.log(`agentsee listening on ${HOST}:${PORT}`);
+  if (token) {
+    console.log(`  Auth:           token loaded (external access enabled)`);
+  } else {
+    console.log(`  Auth:           none (localhost only)`);
+  }
   console.log(`  Hook receiver:  http://localhost:${PORT}/hook/pre`);
   console.log(`  Agent status:   http://localhost:${PORT}/agent/status`);
   console.log(`  MCP server:     http://localhost:${PORT}/mcp`);
