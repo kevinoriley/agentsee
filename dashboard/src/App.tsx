@@ -241,6 +241,9 @@ export function App() {
           onRemove={(id) => {
             send({ type: "agent:remove", agent_id: id, data: {} });
           }}
+          onRemoveAll={() => {
+            send({ type: "agent:remove-all", agent_id: "*", data: {} });
+          }}
           onClose={() => setBrowserOpen(false)}
         />
       )}

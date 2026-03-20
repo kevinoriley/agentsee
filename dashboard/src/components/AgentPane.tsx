@@ -49,11 +49,13 @@ export function AgentPane({
   hasChatHistory,
   onOpenChat,
 }: Props) {
+  const isComplete = agent.status === "complete";
   const [now, setNow] = useState(Date.now());
   useEffect(() => {
+    if (isComplete) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
-  }, []);
+  }, [isComplete]);
 
   const idle = now - new Date(agent.last_activity).getTime();
 
@@ -86,7 +88,7 @@ export function AgentPane({
           <ModeBadge mode={agent.mode} status={agent.status} />
         </div>
         <div style={s.headerRight}>
-          <IdleIndicator idle={idle} />
+          <IdleIndicator idle={idle} complete={isComplete} />
           {(hasCheckin || hasChatHistory) && (
             <button
               style={{ ...s.chatBtn, ...(hasCheckin ? s.chatBtnActive : {}) }}
@@ -124,7 +126,15 @@ export function AgentPane({
 
 const SPINNER_FRAMES = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 
-function IdleIndicator({ idle }: { idle: number }) {
+function IdleIndicator({ idle, complete }: { idle: number; complete: boolean }) {
+  if (complete) {
+    return (
+      <span style={{ color: "#484f58", fontSize: 10, fontFamily: "inherit" }}>
+        {formatIdle(idle)}
+      </span>
+    );
+  }
+
   const showSpinner = idle >= 5_000 && idle < 300_000; // 5s to 5min
   const frame = SPINNER_FRAMES[Math.floor(Date.now() / 100) % SPINNER_FRAMES.length];
   const color = idleColor(idle);
