@@ -126,8 +126,8 @@ export function createAuthMiddleware(token: string | null) {
         return;
       }
 
-      // Always allow hook endpoints (agents authenticate via hook config)
-      if (req.path.startsWith("/hook/")) {
+      // Always allow hook and MCP endpoints (agents authenticate via their own config)
+      if (req.path.startsWith("/hook/") || req.path.startsWith("/mcp")) {
         next();
         return;
       }
