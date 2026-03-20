@@ -21,6 +21,13 @@ export function createHookRouter(store: AgentStore, wss: WebSocketServer): Route
 
   router.post("/hook/pre", (req: Request, res: Response) => {
     const body = req.body as HookPreRequest;
+
+    // Skip parent sessions — only track subagents (which have agent_id set)
+    if (!body.agent_id) {
+      res.json({ allow: true } as HookPreResponse);
+      return;
+    }
+
     const agent_id = normalizeAgentId(body.agent_id, body.session_id);
     const state = store.getOrAutoRegister(
       agent_id,
@@ -94,6 +101,13 @@ export function createHookRouter(store: AgentStore, wss: WebSocketServer): Route
 
   router.post("/hook/post", (req: Request, res: Response) => {
     const body = req.body as HookPostRequest;
+
+    // Skip parent sessions — only track subagents
+    if (!body.agent_id) {
+      res.sendStatus(200);
+      return;
+    }
+
     const agent_id = normalizeAgentId(body.agent_id, body.session_id);
 
     // Touch last_activity

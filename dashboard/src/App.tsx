@@ -69,7 +69,7 @@ export function App() {
       ws.setStreamHistory(agentId, entries);
     },
     onCheckin: (agentId, data) => {
-      ws.setCheckin(agentId, data);
+      ws.setCheckin(agentId, { ...data, receivedAt: Date.now() });
       ws.updateAgent(agentId, { status: "checking_in", has_pending_checkin: true });
       // Record agent message in chat history
       ws.addChatMessage(agentId, {
@@ -253,6 +253,10 @@ export function App() {
       {chatAgentId && (
         <ChatPanel
           agentId={chatAgentId}
+          agentLabel={(() => {
+            const a = ws.agents[chatAgentId];
+            return a?.task_description || a?.agent_type || chatAgentId;
+          })()}
           checkin={ws.checkins[chatAgentId] ?? null}
           history={ws.chatHistories[chatAgentId] ?? []}
           onRespond={handleRespond}
