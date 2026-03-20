@@ -72,7 +72,9 @@ export function AgentBrowser({
                   </div>
                   <div style={s.itemRight}>
                     <ModeBadge mode={agent.mode} status={agent.status} />
-                    <span style={s.idle}>{idleStr}</span>
+                    {agent.status !== "complete" && (
+                      <span style={s.idle}>{idleStr}</span>
+                    )}
                     <button
                       style={s.purgeBtn}
                       onClick={(e) => {
