@@ -51,6 +51,16 @@ You can change modes mid-run. No restart needed.
 
 Click **Hold** in any pane header. The agent's next tool call will be blocked. The agent will then call `operator_checkpoint` and you'll see the chat panel open with its summary.
 
+## MCP timeout
+
+When an agent checks in, a **5-minute countdown timer** appears in both the pane header and the chat panel. This is the MCP tool call timeout — if you don't respond before it reaches zero, Claude Code will kill the agent's MCP call and the agent will die.
+
+The timer changes color as time runs low:
+
+- **Blue** — plenty of time
+- **Orange** — under 2 minutes
+- **Red** — under 1 minute
+
 ## Chatting with agents
 
 When an agent checks in (either from a hold or from reaching its leash limit), a chat panel opens. It shows:

@@ -110,7 +110,7 @@ fi
 
 MCP_CURRENT=$(cat "$MCP_FILE")
 
-if echo "$MCP_CURRENT" | jq -e '.mcpServers.agentsee' &>/dev/null; then
+if echo "$MCP_CURRENT" | jq -e '.mcpServers.agentsee.url' &>/dev/null; then
   echo "[skip] MCP server already configured"
 else
   MCP_CURRENT=$(echo "$MCP_CURRENT" | jq '

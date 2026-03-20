@@ -33,9 +33,14 @@ For API or curl access, use a Bearer token:
 curl -H "Authorization: Bearer YOUR_TOKEN" http://your-host:4900/agent/status
 ```
 
-## Hook endpoints
+## Exempt endpoints
 
-Hook endpoints (`/hook/pre`, `/hook/post`) are **always allowed** regardless of authentication. Agents authenticate via their hook configuration, not via the auth token.
+Hook and MCP endpoints are **always allowed** regardless of authentication:
+
+- `/hook/*` — agent hook callbacks
+- `/mcp` — MCP tool server (used by Claude Code agents)
+
+Agents authenticate via their own configuration, not via the auth token.
 
 ## Remove authentication
 
