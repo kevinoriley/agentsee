@@ -138,13 +138,15 @@ export function App() {
 
   const handleSetThreshold = useCallback(
     (agentId: string, threshold: number | null) => {
+      // Optimistically reset turn_count so the remaining display doesn't flash
+      ws.updateAgent(agentId, { turn_count: 0 });
       send({
         type: "agent:set_threshold",
         agent_id: agentId,
         data: { threshold },
       });
     },
-    [send]
+    [send, ws]
   );
 
   const handleScrollTop = useCallback(
