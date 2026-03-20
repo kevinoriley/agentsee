@@ -253,6 +253,10 @@ export function App() {
       {chatAgentId && (
         <ChatPanel
           agentId={chatAgentId}
+          agentLabel={(() => {
+            const a = ws.agents[chatAgentId];
+            return a?.task_description || a?.agent_type || chatAgentId;
+          })()}
           checkin={ws.checkins[chatAgentId] ?? null}
           history={ws.chatHistories[chatAgentId] ?? []}
           onRespond={handleRespond}

@@ -10,6 +10,7 @@ interface ChatMessage {
 
 interface Props {
   agentId: string;
+  agentLabel: string;
   checkin: CheckinData | null;
   history: ChatMessage[];
   onRespond: (agentId: string, message: string, keepHeld: boolean, leash: number | null) => void;
@@ -18,7 +19,9 @@ interface Props {
 
 export type { ChatMessage };
 
-export function ChatPanel({ agentId, checkin, history, onRespond, onClose }: Props) {
+const MCP_TIMEOUT_MS = 300_000; // 5 minutes
+
+export function ChatPanel({ agentId, agentLabel, checkin, history, onRespond, onClose }: Props) {
   const [input, setInput] = useState("");
   const bodyRef = useRef<HTMLDivElement>(null);
 
@@ -31,6 +34,29 @@ export function ChatPanel({ agentId, checkin, history, onRespond, onClose }: Pro
 
   const [keepHeld, setKeepHeld] = useState(false);
   const [leashDraft, setLeashDraft] = useState("");
+
+  // Track checkin start time for MCP timeout countdown
+  const checkinStartRef = useRef<number | null>(null);
+  const [timeLeft, setTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (checkin) {
+      if (checkinStartRef.current === null) {
+        checkinStartRef.current = Date.now();
+      }
+      const tick = () => {
+        const elapsed = Date.now() - checkinStartRef.current!;
+        const remaining = Math.max(0, MCP_TIMEOUT_MS - elapsed);
+        setTimeLeft(remaining);
+      };
+      tick();
+      const id = setInterval(tick, 1000);
+      return () => clearInterval(id);
+    } else {
+      checkinStartRef.current = null;
+      setTimeLeft(null);
+    }
+  }, [checkin]);
 
   const send = () => {
     const msg = input.trim() || "Continue.";
@@ -46,9 +72,22 @@ export function ChatPanel({ agentId, checkin, history, onRespond, onClose }: Pro
     <div style={s.overlay} onClick={onClose}>
       <div style={s.panel} onClick={(e) => e.stopPropagation()}>
         <div style={s.header}>
-          <span style={{ fontWeight: 600 }}>Operator Chat — {agentId}</span>
+          <span style={{ fontWeight: 600 }}>Operator Chat — {agentLabel}</span>
           <div style={s.headerRight}>
-            {waiting && <span style={s.waitingBadge}>Awaiting response</span>}
+            {waiting && timeLeft !== null && (
+              <span style={{
+                ...s.waitingBadge,
+                ...(timeLeft <= 60_000
+                  ? { background: "#3a1a1a", color: "#f85149", borderColor: "#da3633" }
+                  : timeLeft <= 120_000
+                    ? { background: "#3a2a1a", color: "#d29922", borderColor: "#9e6a03" }
+                    : {}),
+              }}>
+                {timeLeft <= 0
+                  ? "TIMED OUT"
+                  : `${Math.floor(timeLeft / 60_000)}:${String(Math.floor((timeLeft % 60_000) / 1000)).padStart(2, "0")} until timeout`}
+              </span>
+            )}
             <button style={s.closeBtn} onClick={onClose}>×</button>
           </div>
         </div>

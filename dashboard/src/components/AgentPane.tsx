@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { ModeBadge } from "./ModeBadge";
 import { AgentStream } from "./AgentStream";
 import type { AgentInfo, StreamEntry } from "../types";
+
+const MCP_TIMEOUT_MS = 300_000; // 5 minutes
 
 interface Props {
   agent: AgentInfo;
@@ -63,6 +65,28 @@ export function AgentPane({
   // Recompute with `now` to ensure reactivity
   const idleMs = now - new Date(agent.last_activity).getTime();
 
+  // MCP timeout countdown when agent is checking in
+  const checkinStartRef = useRef<number | null>(null);
+  const [checkinTimeLeft, setCheckinTimeLeft] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (hasCheckin) {
+      if (checkinStartRef.current === null) {
+        checkinStartRef.current = Date.now();
+      }
+      const tick = () => {
+        const remaining = Math.max(0, MCP_TIMEOUT_MS - (Date.now() - checkinStartRef.current!));
+        setCheckinTimeLeft(remaining);
+      };
+      tick();
+      const id = setInterval(tick, 1000);
+      return () => clearInterval(id);
+    } else {
+      checkinStartRef.current = null;
+      setCheckinTimeLeft(null);
+    }
+  }, [hasCheckin]);
+
   return (
     <div
       style={{
@@ -93,6 +117,22 @@ export function AgentPane({
         </div>
         <div style={s.headerRight}>
           <IdleIndicator idle={idleMs} complete={isComplete} />
+          {checkinTimeLeft !== null && (
+            <span style={{
+              fontSize: 10,
+              fontWeight: 600,
+              fontFamily: "inherit",
+              color: checkinTimeLeft <= 60_000
+                ? "#f85149"
+                : checkinTimeLeft <= 120_000
+                  ? "#d29922"
+                  : "#58a6ff",
+            }}>
+              {checkinTimeLeft <= 0
+                ? "TIMED OUT"
+                : `${Math.floor(checkinTimeLeft / 60_000)}:${String(Math.floor((checkinTimeLeft % 60_000) / 1000)).padStart(2, "0")}`}
+            </span>
+          )}
           {(hasCheckin || hasChatHistory) && (
             <button
               style={{ ...s.chatBtn, ...(hasCheckin ? s.chatBtnActive : {}) }}
